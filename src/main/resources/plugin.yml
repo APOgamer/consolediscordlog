@@ -1,5 +1,5 @@
 name: ConsoleDiscordTyper
-version: 1.0
+version: 1.2
 main: cdt.apoapio.ConsoleDiscordTyper
 api-version: 1.21
 description: A plugin that executes console commands from a Discord channel

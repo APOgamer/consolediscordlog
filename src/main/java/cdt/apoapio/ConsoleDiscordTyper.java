@@ -6,8 +6,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import javax.security.auth.login.LoginException;
-
 public class ConsoleDiscordTyper extends JavaPlugin {
 
     private JDA jda;
@@ -40,8 +38,19 @@ public class ConsoleDiscordTyper extends JavaPlugin {
         @Override
         public void onMessageReceived(MessageReceivedEvent event) {
             if (event.getChannel().getId().equals(channelId) && !event.getAuthor().isBot()) {
-                String command = event.getMessage().getContentRaw();
-                Bukkit.getScheduler().runTask(ConsoleDiscordTyper.this, () -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+                String command = event.getMessage().getContentRaw().trim();
+
+                // Verifica si el comando no está vacío
+                if (!command.isEmpty()) {
+                    Bukkit.getScheduler().runTask(ConsoleDiscordTyper.this, () -> {
+                        boolean success = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                        if (!success) {
+                            event.getChannel().sendMessage("El comando '" + command + "' no se pudo ejecutar.").queue();
+                        }
+                    });
+                } else {
+                    event.getChannel().sendMessage("El comando no puede estar vacío.").queue();
+                }
             }
         }
     }
