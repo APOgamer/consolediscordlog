@@ -1,16 +1,19 @@
 package cdt.apoapio;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
+
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
 
 public class ConsoleDiscordTyper extends JavaPlugin {
 
     private JDA jda;
     private String token;
     private String channelId;
+    private static final String COMMAND_PREFIX = "command "; // Define el prefijo de comando
 
     @Override
     public void onEnable() {
@@ -24,7 +27,15 @@ public class ConsoleDiscordTyper extends JavaPlugin {
             return;
         }
 
-        jda = JDABuilder.createDefault(token).addEventListeners(new DiscordListener()).build();
+        try {
+            jda = JDABuilder.createDefault(token)
+                    .enableIntents(GatewayIntent.MESSAGE_CONTENT) // Habilita la intención de contenido de mensajes
+                    .addEventListeners(new DiscordListener())
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            getServer().getPluginManager().disablePlugin(this);
+        }
     }
 
     @Override
@@ -38,18 +49,21 @@ public class ConsoleDiscordTyper extends JavaPlugin {
         @Override
         public void onMessageReceived(MessageReceivedEvent event) {
             if (event.getChannel().getId().equals(channelId) && !event.getAuthor().isBot()) {
-                String command = event.getMessage().getContentRaw().trim();
+                String message = event.getMessage().getContentRaw().trim();
 
-                // Verifica si el comando no está vacío
-                if (!command.isEmpty()) {
-                    Bukkit.getScheduler().runTask(ConsoleDiscordTyper.this, () -> {
-                        boolean success = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
-                        if (!success) {
-                            event.getChannel().sendMessage("El comando '" + command + "' no se pudo ejecutar.").queue();
-                        }
-                    });
-                } else {
-                    event.getChannel().sendMessage("El comando no puede estar vacío.").queue();
+                if (message.startsWith(COMMAND_PREFIX)) {
+                    String command = message.substring(COMMAND_PREFIX.length()).trim();
+
+                    if (!command.isEmpty()) {
+                        Bukkit.getScheduler().runTask(ConsoleDiscordTyper.this, () -> {
+                            boolean success = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                            if (!success) {
+                                event.getChannel().sendMessage("El comando '" + command + "' no se pudo ejecutar.").queue();
+                            }
+                        });
+                    } else {
+                        event.getChannel().sendMessage("El comando no puede estar vacío.").queue();
+                    }
                 }
             }
         }
